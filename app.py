@@ -36,7 +36,7 @@ def create_user(user: PydanticUsers):
     return user
 
 @app.put("/user/update/{user_id}")
-def update_user(user_id: int, user: Users):
+def update_user(user_id: int, user: PydanticUsers):
     db_user = session.query(Users).where(Users.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -48,6 +48,7 @@ def update_user(user_id: int, user: Users):
     if user.role:
         db_user.role = user.role
 
+    session.commit()    
     return db_user
 
 @app.delete("/user/delete/{user_id}")
