@@ -1,10 +1,14 @@
 from fastapi import FastAPI, HTTPException, status
 from models.users import session, Users
 from models.pydantic_users import PydanticUsers
-import sys
-print(f"Python executable: {sys.executable}")
+from utils.mongo_client import db
+from typing import List
 
 app = FastAPI()
+
+def serialize_document(doc):
+    doc['_id'] = str(doc['_id'])  # Convertir ObjectId en string
+    return doc
 
 @app.get("/user/{user_id}")
 def read_user(user_id: int):
@@ -18,8 +22,6 @@ def create_user(user: PydanticUsers):
     user = session.query(Users).where(Users.username == user.username).first()
     if user:
         raise HTTPException(status_code=409, detail="Username taken")
-    if len(user.password) < 5:
-        raise HTTPException(status_code=422, detail="Password too short")
     if len(user.username) < 4:
         raise HTTPException(status_code=422, detail="Username too short")
     
@@ -59,3 +61,18 @@ def delete_user(user_id: int):
     
     session.delete(db_user)
     session.commit()
+
+
+@app.get("/interactions/{type}", response_model=List[dict])
+async def get_interaction_by_type(type: str):
+    collection = db["Interactions"]
+    query = collection.find({"type": type})
+    interactions = [serialize_document(doc) async for doc in query]
+    return interactions
+
+@app.get("/interactions/{user_id}", response_model=List[dict])
+async def get_interaction_by_user(user_id: int):
+    collection = db["Interactions"]
+    query = collection.find({"id_user": user_id})
+    interactions = [serialize_document(doc) async for doc in query]
+    return interactions
