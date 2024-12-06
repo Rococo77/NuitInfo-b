@@ -8,7 +8,10 @@ app = FastAPI()
 
 @app.get("/user/{user_id}")
 def read_user(user_id: int):
-    pass
+    user = session.query(Users).where(Users.id == user_id).first()
+    if user:
+        return user
+    return None
 
 @app.post("/user/create/")
 def create_user(user: PydanticUsers):
@@ -21,4 +24,5 @@ def create_user(user: PydanticUsers):
     )
     session.add(new_user)
     session.commit()
-    return new_user
+    print("created user")
+    return user
