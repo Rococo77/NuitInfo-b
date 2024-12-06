@@ -49,3 +49,12 @@ def update_user(user_id: int, user: Users):
         db_user.role = user.role
 
     return db_user
+
+@app.delete("/user/delete/{user_id}")
+def delete_user(user_id: int):
+    db_user = session.query(Users).where(Users.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    session.delete(db_user)
+    session.commit()
