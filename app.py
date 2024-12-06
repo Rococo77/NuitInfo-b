@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException
 from models.users import session, Users
 from models.pydantic_users import PydanticUsers
+from models.pydantic_interactions import PydanticInteraction
 from utils.mongo_client import db
 from typing import List
+from bson import ObjectId
 
 app = FastAPI()
 
@@ -63,6 +65,11 @@ def delete_user(user_id: int):
     session.commit()
 
 
+@app.post("/create/interaction/")
+async def create_interaction(interaction: PydanticInteraction):
+    collection = db["Interactions"]
+    await collection.insert_one(interaction.model_dump())    
+
 @app.get("/interactions/{type}", response_model=List[dict])
 async def get_interaction_by_type(type: str):
     collection = db["Interactions"]
@@ -76,3 +83,13 @@ async def get_interaction_by_user(user_id: int):
     query = collection.find({"id_user": user_id})
     interactions = [serialize_document(doc) async for doc in query]
     return interactions
+
+@app.delete("/delete/interaction/{id_interaction}")
+async def delete_interaction(id_interaction: str):
+    try:
+        object_id = ObjectId(id_interaction)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ObjectId format")
+
+    collection = db["Interactions"]
+    await collection.delete_one({"_id": object_id})
